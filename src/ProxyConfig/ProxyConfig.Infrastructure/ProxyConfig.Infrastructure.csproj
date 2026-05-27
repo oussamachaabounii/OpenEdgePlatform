@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>OpenEdgePlatform.ProxyConfig.Infrastructure</AssemblyName>
+    <RootNamespace>OpenEdgePlatform.ProxyConfig.Infrastructure</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ProxyConfig.Core\ProxyConfig.Core.csproj" />
+  </ItemGroup>
+</Project>

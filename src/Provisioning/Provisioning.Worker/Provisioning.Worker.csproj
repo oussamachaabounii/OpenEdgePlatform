@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+  <PropertyGroup>
+    <AssemblyName>OpenEdgePlatform.Provisioning.Worker</AssemblyName>
+    <RootNamespace>OpenEdgePlatform.Provisioning.Worker</RootNamespace>
+    <UserSecretsId>open-edge-platform-provisioning-worker</UserSecretsId>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="MassTransit" Version="8.2.5" />
+    <PackageReference Include="MassTransit.RabbitMQ" Version="8.2.5" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.1" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.10" />
+    <PackageReference Include="Serilog.Extensions.Hosting" Version="8.0.0" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.9.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Provisioning.Core\Provisioning.Core.csproj" />
+    <ProjectReference Include="..\..\ServiceBroker\ServiceBroker.Core\ServiceBroker.Core.csproj" />
+    <ProjectReference Include="..\..\ServiceBroker\ServiceBroker.Infrastructure\ServiceBroker.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\ProxyConfig\ProxyConfig.Core\ProxyConfig.Core.csproj" />
+  </ItemGroup>
+</Project>

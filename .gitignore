@@ -1,0 +1,41 @@
+## .NET build artifacts
+bin/
+obj/
+out/
+*.user
+*.suo
+.vs/
+.vscode/
+.idea/
+*.swp
+
+## Test results
+TestResults/
+coverage.*
+*.coverage
+*.coveragexml
+
+## Logs
+*.log
+logs/
+
+## Local secrets
+appsettings.Local.json
+appsettings.Development.local.json
+.env
+.env.local
+*.pfx
+
+## OS
+.DS_Store
+Thumbs.db
+
+## Docker
+docker-compose.override.local.yml
+
+## Rider / Visual Studio
+*.iml
+.idea_modules/
+
+## Claude Code local settings
+.claude/settings.local.json

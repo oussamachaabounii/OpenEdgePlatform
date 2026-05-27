@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: service-broker
+  labels: { app: service-broker, component: edge-platform }
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: service-broker }
+  template:
+    metadata:
+      labels: { app: service-broker, component: edge-platform }
+    spec:
+      containers:
+        - name: api
+          image: open-edge-platform/service-broker:latest
+          ports: [{ containerPort: 8080, name: http }]
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Production
+            - name: ConnectionStrings__Postgres
+              valueFrom: { secretKeyRef: { name: edge-platform-db, key: broker-connection-string } }
+            - name: ConnectionStrings__RabbitMq
+              valueFrom: { secretKeyRef: { name: edge-platform-rabbitmq, key: connection-string } }
+          readinessProbe:
+            httpGet: { path: /health, port: http }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /health, port: http }
+            initialDelaySeconds: 15
+            periodSeconds: 30
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits:   { cpu: 500m, memory: 512Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: service-broker
+spec:
+  selector: { app: service-broker }
+  ports: [{ port: 80, targetPort: http, name: http }]

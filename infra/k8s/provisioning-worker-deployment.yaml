@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: provisioning-worker
+  labels: { app: provisioning-worker, component: edge-platform }
+spec:
+  replicas: 3
+  selector:
+    matchLabels: { app: provisioning-worker }
+  template:
+    metadata:
+      labels: { app: provisioning-worker, component: edge-platform }
+    spec:
+      containers:
+        - name: worker
+          image: open-edge-platform/provisioning-worker:latest
+          env:
+            - name: DOTNET_ENVIRONMENT
+              value: Production
+            - name: ConnectionStrings__Postgres
+              valueFrom: { secretKeyRef: { name: edge-platform-db, key: broker-connection-string } }
+            - name: ConnectionStrings__RabbitMq
+              valueFrom: { secretKeyRef: { name: edge-platform-rabbitmq, key: connection-string } }
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits:   { cpu: 500m, memory: 512Mi }

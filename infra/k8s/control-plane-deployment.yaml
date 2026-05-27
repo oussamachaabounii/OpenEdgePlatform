@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: control-plane
+  labels: { app: control-plane, component: edge-platform }
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: control-plane }
+  template:
+    metadata:
+      labels: { app: control-plane, component: edge-platform }
+    spec:
+      containers:
+        - name: api
+          image: open-edge-platform/control-plane:latest
+          ports:
+            - { containerPort: 8081, name: http }
+            - { containerPort: 18000, name: grpc }
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Production
+            - name: ConnectionStrings__Postgres
+              valueFrom: { secretKeyRef: { name: edge-platform-db, key: control-connection-string } }
+            - name: ConnectionStrings__RabbitMq
+              valueFrom: { secretKeyRef: { name: edge-platform-rabbitmq, key: connection-string } }
+            - name: ConnectionStrings__Redis
+              value: redis:6379
+          readinessProbe:
+            httpGet: { path: /health, port: http }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests: { cpu: 200m, memory: 512Mi }
+            limits:   { cpu: 1000m, memory: 1Gi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: control-plane
+spec:
+  selector: { app: control-plane }
+  ports:
+    - { port: 80, targetPort: http, name: http }
+    - { port: 18000, targetPort: grpc, name: grpc }

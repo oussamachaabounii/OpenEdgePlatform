@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>OpenEdgePlatform.ProxyConfig.Core</AssemblyName>
+    <RootNamespace>OpenEdgePlatform.ProxyConfig.Core</RootNamespace>
+  </PropertyGroup>
+</Project>

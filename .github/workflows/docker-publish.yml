@@ -1,0 +1,41 @@
+name: Docker
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*.*.*']
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        component:
+          - { name: service-broker,       dockerfile: src/ServiceBroker/ServiceBroker.Api/Dockerfile }
+          - { name: provisioning-worker,  dockerfile: src/Provisioning/Provisioning.Worker/Dockerfile }
+          - { name: control-plane,        dockerfile: src/ControlPlane/ControlPlane.Api/Dockerfile }
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push ${{ matrix.component.name }}
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.component.dockerfile }}
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/open-edge-platform-${{ matrix.component.name }}:latest
+            ghcr.io/${{ github.repository_owner }}/open-edge-platform-${{ matrix.component.name }}:${{ github.sha }}

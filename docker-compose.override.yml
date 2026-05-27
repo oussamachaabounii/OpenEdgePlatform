@@ -1,0 +1,14 @@
+## Developer overrides — mount source for log tail and expose debugger ports.
+services:
+  service-broker:
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      Serilog__MinimumLevel__Default: Debug
+  control-plane:
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      Serilog__MinimumLevel__Default: Debug
+  provisioning-worker:
+    environment:
+      DOTNET_ENVIRONMENT: Development
+      Serilog__MinimumLevel__Default: Debug

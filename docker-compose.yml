@@ -1,0 +1,112 @@
+name: open-edge-platform
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: edge_platform
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_MULTIPLE_DATABASES: edge_platform,edge_platform_control
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./scripts/init-postgres.sh:/docker-entrypoint-initdb.d/init.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d edge_platform"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  service-broker:
+    build:
+      context: .
+      dockerfile: src/ServiceBroker/ServiceBroker.Api/Dockerfile
+    image: open-edge-platform/service-broker:dev
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Postgres: Host=postgres;Database=edge_platform;Username=postgres;Password=postgres
+      ConnectionStrings__RabbitMq: amqp://guest:guest@rabbitmq:5672
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  provisioning-worker:
+    build:
+      context: .
+      dockerfile: src/Provisioning/Provisioning.Worker/Dockerfile
+    image: open-edge-platform/provisioning-worker:dev
+    environment:
+      DOTNET_ENVIRONMENT: Production
+      ConnectionStrings__Postgres: Host=postgres;Database=edge_platform;Username=postgres;Password=postgres
+      ConnectionStrings__RabbitMq: amqp://guest:guest@rabbitmq:5672
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  control-plane:
+    build:
+      context: .
+      dockerfile: src/ControlPlane/ControlPlane.Api/Dockerfile
+    image: open-edge-platform/control-plane:dev
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Postgres: Host=postgres;Database=edge_platform_control;Username=postgres;Password=postgres
+      ConnectionStrings__RabbitMq: amqp://guest:guest@rabbitmq:5672
+      ConnectionStrings__Redis: redis:6379
+    ports:
+      - "8081:8081"
+      - "18000:18000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  envoy:
+    build:
+      context: ./infra/envoy
+    image: open-edge-platform/envoy:dev
+    environment:
+      REGION: us-east-1
+      POD_NAME: envoy-edge-1
+      CONTROL_PLANE_HOST: control-plane
+      CONTROL_PLANE_PORT: "18000"
+    ports:
+      - "10000:10000"
+      - "9901:9901"
+    depends_on:
+      - control-plane
+
+volumes:
+  postgres-data:

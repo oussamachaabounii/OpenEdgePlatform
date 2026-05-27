@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: envoy-edge
+  labels: { app: envoy-edge, component: edge-platform }
+spec:
+  selector:
+    matchLabels: { app: envoy-edge }
+  template:
+    metadata:
+      labels: { app: envoy-edge, component: edge-platform }
+    spec:
+      hostNetwork: true
+      containers:
+        - name: envoy
+          image: envoyproxy/envoy:v1.29-latest
+          args:
+            - "-c"
+            - "/etc/envoy/envoy-bootstrap.yaml"
+            - "--service-cluster"
+            - "edge-fleet"
+            - "--service-node"
+            - "$(POD_NAME)"
+          env:
+            - name: POD_NAME
+              valueFrom: { fieldRef: { fieldPath: metadata.name } }
+            - name: REGION
+              valueFrom: { configMapKeyRef: { name: envoy-config, key: region } }
+            - name: CONTROL_PLANE_HOST
+              value: control-plane
+            - name: CONTROL_PLANE_PORT
+              value: "18000"
+          ports:
+            - { containerPort: 10000, name: ingress, hostPort: 443 }
+            - { containerPort: 9901, name: admin }
+          volumeMounts:
+            - { name: bootstrap, mountPath: /etc/envoy }
+          resources:
+            requests: { cpu: 200m, memory: 256Mi }
+            limits:   { cpu: 2000m, memory: 1Gi }
+      volumes:
+        - name: bootstrap
+          configMap: { name: envoy-bootstrap, items: [{ key: envoy-bootstrap.yaml, path: envoy-bootstrap.yaml }] }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: envoy-config
+data:
+  region: us-east-1

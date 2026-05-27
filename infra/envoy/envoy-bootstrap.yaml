@@ -1,0 +1,50 @@
+## Envoy bootstrap config — minimal ADS client.
+## Envoy connects to the control plane over HTTP/2 + plaintext (no TLS in dev) and
+## pulls listeners, clusters, routes, and endpoints over a single ADS stream.
+
+admin:
+  address:
+    socket_address:
+      address: 0.0.0.0
+      port_value: 9901
+
+node:
+  id: ${POD_NAME}
+  cluster: edge-fleet
+  locality:
+    region: ${REGION}
+    zone: ${REGION}a
+
+dynamic_resources:
+  ads_config:
+    api_type: GRPC
+    transport_api_version: V3
+    grpc_services:
+      - envoy_grpc:
+          cluster_name: xds_control_plane
+  cds_config:
+    resource_api_version: V3
+    ads: {}
+  lds_config:
+    resource_api_version: V3
+    ads: {}
+
+static_resources:
+  clusters:
+    - name: xds_control_plane
+      connect_timeout: 1s
+      type: STRICT_DNS
+      typed_extension_protocol_options:
+        envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+          "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+          explicit_http_config:
+            http2_protocol_options: {}
+      load_assignment:
+        cluster_name: xds_control_plane
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: ${CONTROL_PLANE_HOST}
+                      port_value: ${CONTROL_PLANE_PORT}
